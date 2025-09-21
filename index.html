@@ -283,7 +283,13 @@
                  // Intentionally left blank to improve performance.
             };
 
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                }
+            };
             html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
                 .catch(err => {
                     scanResultDiv.innerHTML = `<p class="text-red-500">Error: Could not start camera.</p>`;
