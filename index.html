@@ -56,29 +56,43 @@
             border: 4px solid #3E3E3E;
             box-shadow: 6px 6px 0px #222222;
         }
-
-        input[type="file"]::file-selector-button {
-            font-family: 'Press Start 2P', cursive;
-            border: 2px solid #000000;
-            padding: .5rem 1rem;
-            background-color: #7D7D7D;
-            color: #FFFFFF;
-            transition: background .2s ease-in-out;
-            box-shadow: 2px 2px 0px #000000;
-        }
-
-        input[type="file"]::file-selector-button:hover {
-            background-color: #8E8E8E;
-        }
         
+        .input-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            border: 0;
+        }
+
         #qrcode-grid img,
-        #qrcode-grid canvas {
-            image-rendering: pixelated; /* Ensures crisp images */
+        #qrcode-grid canvas,
+        #modal-qr-img {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
         
         #reader {
             border: 4px solid #3E3E3E;
             box-shadow: 6px 6px 0px #222222;
+        }
+
+        #qr-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            /* display: flex is set by JS */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
     </style>
 </head>
@@ -103,7 +117,13 @@
                 <div class="text-center mb-6">
                     <p class="mb-2">1. Upload Excel File (.xlsx)</p>
                     <p class="text-xs text-gray-400 mb-4">The first column will be used for QR codes.</p>
-                    <input type="file" id="excel-file" accept=".xlsx" class="text-sm">
+                    <div class="flex justify-center items-center space-x-4 max-w-sm mx-auto">
+                        <label for="excel-file" class="btn-8bit py-2 px-4 cursor-pointer text-sm whitespace-nowrap">
+                            Choose File
+                        </label>
+                        <span id="file-name-display" class="text-gray-400 text-sm truncate text-left flex-grow">No file chosen</span>
+                        <input type="file" id="excel-file" accept=".xlsx" class="input-hidden">
+                    </div>
                 </div>
                 
                 <div class="text-center mb-6">
@@ -113,25 +133,23 @@
                 <div id="qrcode-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
                 
                 <div class="text-center mt-8">
-                    <button id="download-btn" class="btn-8bit py-3 px-8 text-xl hidden">Download All as .ZIP</button>
+                    <button id="download-btn" class="btn-8bit py-3 px-8 text-xl" style="display: none;">Download All as .ZIP</button>
                 </div>
             </div>
 
-            <div id="scanner-section" class="hidden">
+            <div id="scanner-section" style="display: none;">
                 <div class="flex flex-col items-center">
-                    <div id="reader" class="w-full max-w-sm h-auto mb-4"></div>
-                    <p class="text-xs text-gray-400 -mt-2 mb-2">Tip: Avoid screen glare and use good lighting.</p>
-                    
-                    <div class="text-center my-2">
-                        <p class="text-gray-300 mb-2 text-sm">OR</p>
-                        <label for="qr-image-file" class="btn-8bit py-2 px-4 cursor-pointer text-sm">
-                            Upload QR Image
+                    <div id="reader" style="display: none;"></div> <!-- Kept for the library, but hidden -->
+                    <p class="text-lg mb-4">Upload a QR Code Image</p>
+                    <div class="text-center">
+                        <label for="qr-image-file" class="btn-8bit py-3 px-6 cursor-pointer text-lg">
+                            Choose Image
                         </label>
-                        <input type="file" id="qr-image-file" accept="image/*" class="hidden">
+                        <input type="file" id="qr-image-file" accept="image/*" class="input-hidden">
                     </div>
                     
-                    <div id="scan-result" class="text-center mt-4 p-4 panel-8bit min-h-[100px] w-full max-w-md">
-                        <p class="text-gray-400">Scan a QR code to see the result here.</p>
+                    <div id="scan-result" class="text-center mt-6 p-4 panel-8bit min-h-[100px] w-full max-w-md">
+                        <p class="text-gray-400">Upload an image to see the result.</p>
                     </div>
                 </div>
             </div>
@@ -139,9 +157,15 @@
         </main>
         
         <footer class="text-center text-xs text-gray-400 mt-8">
-            <p>Made with 像素 and JavaScript</p>
         </footer>
     </div>
+    
+    <div id="qr-modal" style="display: none;">
+        <div class="p-4 bg-white rounded-lg">
+            <img id="modal-qr-img" src="" alt="Enlarged QR Code" class="max-w-[80vw] max-h-[80vh] w-auto h-auto">
+        </div>
+    </div>
+
 
     <script>
         const excelFileInput = document.getElementById('excel-file');
@@ -155,13 +179,25 @@
         const scannerSection = document.getElementById('scanner-section');
         const scanResultDiv = document.getElementById('scan-result');
         const qrImageFile = document.getElementById('qr-image-file');
+        const qrModal = document.getElementById('qr-modal');
+        const modalQrImg = document.getElementById('modal-qr-img');
         
         let excelData = [];
         let html5QrCode;
 
         excelFileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            if (!file) return;
+            const fileNameDisplay = document.getElementById('file-name-display');
+
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+                statusDiv.textContent = '';
+                generateBtn.disabled = true;
+                return; 
+            }
+            
             statusDiv.textContent = 'Reading your Excel file...';
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -193,7 +229,7 @@
             if (excelData.length === 0) return;
             statusDiv.textContent = 'Generating QR codes...';
             qrCodeGrid.innerHTML = '';
-            downloadBtn.classList.add('hidden');
+            downloadBtn.style.display = 'none';
             
             excelData.forEach(value => {
                 const id = String(value);
@@ -201,7 +237,7 @@
                 cell.className = 'flex flex-col items-center text-center p-2 panel-8bit';
                 
                 const qrContainer = document.createElement('div');
-                qrContainer.className = 'p-4 bg-white rounded-md';
+                qrContainer.className = 'p-4 bg-white rounded-md cursor-pointer';
                 
                 const qr = new QRious({
                     value: id,
@@ -214,6 +250,11 @@
                 img.className = "w-full h-auto";
                 qrContainer.appendChild(img);
                 
+                qrContainer.addEventListener('click', () => {
+                    modalQrImg.src = img.src;
+                    qrModal.style.display = 'flex';
+                });
+                
                 cell.appendChild(qrContainer);
 
                 const idText = document.createElement('p');
@@ -224,7 +265,12 @@
                 qrCodeGrid.appendChild(cell);
             });
             statusDiv.textContent = `${excelData.length} QR codes generated successfully!`;
-            downloadBtn.classList.remove('hidden');
+            downloadBtn.style.display = 'inline-block';
+        });
+
+        qrModal.addEventListener('click', () => {
+            qrModal.style.display = 'none';
+            modalQrImg.src = '';
         });
 
         downloadBtn.addEventListener('click', async () => {
@@ -249,73 +295,30 @@
                 }
             }
             if (tab === 'generator') {
-                generatorSection.classList.remove('hidden');
-                scannerSection.classList.add('hidden');
+                generatorSection.style.display = 'block';
+                scannerSection.style.display = 'none';
                 showGeneratorBtn.classList.add('active');
                 showScannerBtn.classList.remove('active');
             } else if (tab === 'scanner') {
-                generatorSection.classList.add('hidden');
-                scannerSection.classList.remove('hidden');
+                generatorSection.style.display = 'none';
+                scannerSection.style.display = 'block';
                 showGeneratorBtn.classList.remove('active');
                 showScannerBtn.classList.add('active');
-                startScanner();
             }
         }
         showGeneratorBtn.addEventListener('click', () => switchTab('generator'));
         showScannerBtn.addEventListener('click', () => switchTab('scanner'));
 
-        const startScanner = () => {
-            document.getElementById('reader').style.display = 'block';
-            scanResultDiv.innerHTML = `<p class="text-yellow-400">Point your camera at a QR code...</p>`;
-
-            if (!html5QrCode) {
-                 html5QrCode = new Html5Qrcode("reader");
-            }
-            
-            const onScanSuccess = (decodedText, decodedResult) => {
-                scanResultDiv.innerHTML = `
-                    <p class="text-green-400 text-lg">Scan Successful!</p>
-                    <p class="text-xl break-all font-mono">${decodedText}</p>
-                `;
-            };
-            
-            const onScanFailure = (error) => {
-                 // Intentionally left blank to improve performance.
-            };
-
-            const config = { 
-                fps: 10, 
-                qrbox: { width: 250, height: 250 },
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true
-                }
-            };
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-                .catch(err => {
-                    scanResultDiv.innerHTML = `<p class="text-red-500">Error: Could not start camera.</p>`;
-                });
-        };
-
-        qrImageFile.addEventListener('change', async (event) => {
+        qrImageFile.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
-            if (html5QrCode && html5QrCode.isScanning) {
-                try {
-                    await html5QrCode.stop();
-                } catch (err) {
-                     console.error("Failed to stop camera before file scan:", err);
-                }
-            }
-            
-            document.getElementById('reader').style.display = 'none';
             statusDiv.textContent = 'Scanning uploaded image...';
+            scanResultDiv.innerHTML = `<p class="text-yellow-400">Scanning...</p>`;
+            
+            const fileScanner = new Html5Qrcode("reader");
 
-            if (!html5QrCode) {
-                 html5QrCode = new Html5Qrcode("reader");
-            }
-
-            html5QrCode.scanFile(file, true)
+            fileScanner.scanFile(file, true)
                 .then(decodedText => {
                     scanResultDiv.innerHTML = `
                         <p class="text-green-400 text-lg">Scan Successful!</p>
