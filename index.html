@@ -5,15 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retro QR Crafter</title>
     
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts for 8-bit style -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
-    <!-- JavaScript libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -21,32 +18,25 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <style>
-        /* Custom styles for the Minecraft theme */
         body {
             font-family: 'Press Start 2P', cursive;
-            /* IMPORTANT: The background image below uses a local path. */
-            /* This will ONLY work if you create a folder named "images" next to this HTML file, */
-            /* and place your background image inside it named "bg.jpg". */
-            /* For a more reliable method, use a direct web link (URL) like the previous one. */
             background-image: url('./images/bg.jpg');
-            background-size: cover; /* Ensures the image covers the whole page */
-            background-position: center; /* Centers the image */
-            background-attachment: fixed; /* Keeps the background fixed on scroll */
-            background-color: #5E4C3E; /* A dirt-like brown */
-            background-repeat: no-repeat; /* Prevents the image from tiling */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-color: #5E4C3E;
+            background-repeat: no-repeat;
             color: #FFFFFF;
-            /* Prevent text selection to feel more game-like */
             user-select: none; 
         }
 
-        /* Custom class for the blocky, 3D-button effect */
         .btn-8bit {
             border: 2px solid #000000;
-            background-color: #7D7D7D; /* Stone grey */
+            background-color: #7D7D7D;
             color: #FFFFFF;
             box-shadow: 4px 4px 0px #000000;
             transition: all 0.1s ease-in-out;
-            image-rendering: pixelated; /* Ensures sharp pixels on buttons */
+            image-rendering: pixelated;
         }
         
         .btn-8bit:active, .btn-8bit.active {
@@ -61,14 +51,12 @@
             cursor: not-allowed;
         }
 
-        /* Custom class for panel containers */
         .panel-8bit {
             background-color: rgba(0, 0, 0, 0.6);
             border: 4px solid #3E3E3E;
             box-shadow: 6px 6px 0px #222222;
         }
 
-        /* Style for file input button to match the theme */
         input[type="file"]::file-selector-button {
             font-family: 'Press Start 2P', cursive;
             border: 2px solid #000000;
@@ -83,12 +71,10 @@
             background-color: #8E8E8E;
         }
         
-        /* Ensure QR code images are sharp and pixelated */
-        #qrcode-grid img, #scan-result-image {
+        #qrcode-grid img {
             image-rendering: pixelated;
         }
         
-        /* Style for the scanner viewport */
         #reader {
             border: 4px solid #3E3E3E;
             box-shadow: 6px 6px 0px #222222;
@@ -98,29 +84,24 @@
 <body class="min-h-screen flex flex-col items-center p-4 sm:p-6 md:p-8">
 
     <div class="w-full max-w-4xl mx-auto">
-        <!-- Header -->
         <header class="text-center mb-8">
             <h1 class="text-3xl md:text-5xl text-white" style="text-shadow: 3px 3px 0px #000;">Retro QR Crafter</h1>
             <p class="text-sm text-gray-300 mt-2">Generate & Scan QR codes</p>
         </header>
 
-        <!-- Main Content -->
         <main class="panel-8bit p-6 rounded-lg w-full">
             
-            <!-- Tab Navigation -->
             <div class="flex justify-center space-x-4 mb-6">
                 <button id="show-generator-btn" class="btn-8bit py-2 px-6 text-lg active">Generator</button>
                 <button id="show-scanner-btn" class="btn-8bit py-2 px-6 text-lg">Scanner</button>
             </div>
 
-            <!-- Status Messages -->
             <div id="status" class="text-center text-yellow-300 min-h-[24px] mb-4"></div>
 
-            <!-- Generator Section -->
             <div id="generator-section">
                 <div class="text-center mb-6">
                     <p class="mb-2">1. Upload Excel File (.xlsx)</p>
-                    <p class="text-xs text-gray-400 mb-4">The first column of your file will be used for QR codes.</p>
+                    <p class="text-xs text-gray-400 mb-4">The first column will be used for QR codes.</p>
                     <input type="file" id="excel-file" accept=".xlsx" class="text-sm">
                 </div>
                 
@@ -128,19 +109,26 @@
                     <button id="generate-btn" class="btn-8bit py-3 px-8 text-xl" disabled>Generate Codes</button>
                 </div>
                 
-                <div id="qrcode-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <!-- QR Codes will be generated here -->
-                </div>
+                <div id="qrcode-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
                 
                 <div class="text-center mt-8">
                     <button id="download-btn" class="btn-8bit py-3 px-8 text-xl hidden">Download All as .ZIP</button>
                 </div>
             </div>
 
-            <!-- Scanner Section -->
             <div id="scanner-section" class="hidden">
                 <div class="flex flex-col items-center">
                     <div id="reader" class="w-full max-w-sm h-auto mb-4"></div>
+                    <p class="text-xs text-gray-400 -mt-2 mb-2">Tip: Avoid screen glare and use good lighting.</p>
+                    
+                    <div class="text-center my-2">
+                        <p class="text-gray-300 mb-2 text-sm">OR</p>
+                        <label for="qr-image-file" class="btn-8bit py-2 px-4 cursor-pointer text-sm">
+                            Upload QR Image
+                        </label>
+                        <input type="file" id="qr-image-file" accept="image/*" class="hidden">
+                    </div>
+                    
                     <div id="scan-result" class="text-center mt-4 p-4 panel-8bit min-h-[100px] w-full max-w-md">
                         <p class="text-gray-400">Scan a QR code to see the result here.</p>
                     </div>
@@ -155,7 +143,6 @@
     </div>
 
     <script>
-        // DOM Element References
         const excelFileInput = document.getElementById('excel-file');
         const generateBtn = document.getElementById('generate-btn');
         const downloadBtn = document.getElementById('download-btn');
@@ -166,93 +153,64 @@
         const generatorSection = document.getElementById('generator-section');
         const scannerSection = document.getElementById('scanner-section');
         const scanResultDiv = document.getElementById('scan-result');
+        const qrImageFile = document.getElementById('qr-image-file');
         
-        let excelData = []; // To store parsed excel data
-        let html5QrCode; // To store the scanner instance
+        let excelData = [];
+        let html5QrCode;
 
-        // --- Core Logic ---
-
-        // 1. Handle Excel File Upload
         excelFileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
-
             statusDiv.textContent = 'Reading your Excel file...';
             const reader = new FileReader();
-
             reader.onload = (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    // Read the first column into an array, ignoring headers
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    const firstColumnData = jsonData
-                        .map(row => row[0]) // Get the first element of each row
-                        .filter(value => value !== undefined && value !== null && String(value).trim() !== ''); // Filter out any empty cells
+                    const firstColumnData = jsonData.map(row => row[0]).filter(Boolean);
 
                     if (firstColumnData.length > 0) {
                         excelData = firstColumnData;
                         statusDiv.textContent = `File loaded! Found ${excelData.length} rows. Ready to generate.`;
                         generateBtn.disabled = false;
                     } else {
-                        throw new Error("Could not find any data in the first column of your file.");
+                        throw new Error("Could not find any data in the first column.");
                     }
                 } catch (error) {
-                    console.error("Error reading Excel file:", error);
                     statusDiv.textContent = error.message || 'Could not process the Excel file.';
                     excelData = [];
                     generateBtn.disabled = true;
                 }
             };
-            
-            reader.onerror = () => {
-                 statusDiv.textContent = 'Error reading the file.';
-            }
-
             reader.readAsArrayBuffer(file);
         });
 
-        // 2. Generate QR Codes from loaded data
         generateBtn.addEventListener('click', () => {
-            if (excelData.length === 0) {
-                statusDiv.textContent = 'No data to generate from. Please upload a valid file first.';
-                return;
-            }
-
+            if (excelData.length === 0) return;
             statusDiv.textContent = 'Generating QR codes...';
-            qrCodeGrid.innerHTML = ''; // Clear previous results
+            qrCodeGrid.innerHTML = '';
             downloadBtn.classList.add('hidden');
-
-            // Use a timeout to allow the DOM to update before this heavy task
             setTimeout(() => {
                 excelData.forEach(value => {
                     const id = String(value);
                     const cell = document.createElement('div');
                     cell.className = 'flex flex-col items-center text-center p-2 panel-8bit';
-
                     const qrContainer = document.createElement('div');
-                    // Increased padding for a better "quiet zone"
-                    qrContainer.className = 'p-4 bg-white rounded-md'; 
-                    
+                    qrContainer.className = 'p-4 bg-white rounded-md';
                     cell.appendChild(qrContainer);
-
                     const idText = document.createElement('p');
                     idText.textContent = id;
                     idText.className = 'text-xs mt-2 break-all';
                     cell.appendChild(idText);
-                    
                     qrCodeGrid.appendChild(cell);
-
-                    // Generate the QR code
                     new QRCode(qrContainer, {
                         text: id,
-                        // Increased resolution for better scanability
                         width: 256,
                         height: 256,
-                        correctLevel: QRCode.CorrectLevel.H
+                        correctLevel: QRCode.CorrectLevel.L
                     });
                 });
                 statusDiv.textContent = `${excelData.length} QR codes generated successfully!`;
@@ -260,92 +218,93 @@
             }, 10);
         });
 
-        // 3. Download all generated QR Codes as a ZIP file
         downloadBtn.addEventListener('click', async () => {
-            statusDiv.textContent = 'Compressing files into a .zip... Please wait.';
+            statusDiv.textContent = 'Compressing files...';
             const zip = new JSZip();
-            
-            // Find all QR code canvases
-            const qrCanvases = qrCodeGrid.querySelectorAll('canvas');
-
-            qrCanvases.forEach((canvas, index) => {
+            qrCodeGrid.querySelectorAll('canvas').forEach((canvas, index) => {
                 const id = excelData[index];
-                const dataUrl = canvas.toDataURL('image/png');
-                const base64Data = dataUrl.split(',')[1];
-                zip.file(`${id}.png`, base64Data, { base64: true });
+                zip.file(`${id}.png`, canvas.toDataURL('image/png').split(',')[1], { base64: true });
             });
-            
-            try {
-                const content = await zip.generateAsync({ type: 'blob' });
-                saveAs(content, 'qr-codes.zip');
-                statusDiv.textContent = 'ZIP file created and download started!';
-            } catch(error) {
-                console.error("Error creating zip file: ", error);
-                statusDiv.textContent = 'Error creating the zip file.';
-            }
-
+            const content = await zip.generateAsync({ type: 'blob' });
+            saveAs(content, 'qr-codes.zip');
+            statusDiv.textContent = 'ZIP file ready!';
         });
         
-        // --- Tab Switching and Scanner Management ---
-        
         const switchTab = (tab) => {
-             // Stop the scanner when switching away
             if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().catch(err => console.error("Failed to stop scanner", err));
+                html5QrCode.stop().catch(err => console.error("Scanner failed to stop", err));
             }
-        
             if (tab === 'generator') {
                 generatorSection.classList.remove('hidden');
                 scannerSection.classList.add('hidden');
                 showGeneratorBtn.classList.add('active');
                 showScannerBtn.classList.remove('active');
-                statusDiv.textContent = excelData.length > 0 ? `File loaded with ${excelData.length} rows.` : '';
             } else if (tab === 'scanner') {
                 generatorSection.classList.add('hidden');
                 scannerSection.classList.remove('hidden');
                 showGeneratorBtn.classList.remove('active');
                 showScannerBtn.classList.add('active');
-                statusDiv.textContent = 'Scanner ready. Point camera at a QR code.';
                 startScanner();
             }
         }
-
         showGeneratorBtn.addEventListener('click', () => switchTab('generator'));
         showScannerBtn.addEventListener('click', () => switchTab('scanner'));
 
-        // 4. Initialize and start the QR Code Scanner
         const startScanner = () => {
+            document.getElementById('reader').style.display = 'block';
+            scanResultDiv.innerHTML = `<p class="text-gray-400">Scan a QR code to see the result here.</p>`;
+
             if (!html5QrCode) {
                  html5QrCode = new Html5Qrcode("reader");
             }
             
             const onScanSuccess = (decodedText, decodedResult) => {
-                // Handle the scanned code here. Simply display the result.
-                console.log(`Code matched = ${decodedText}`, decodedResult);
                 scanResultDiv.innerHTML = `
                     <p class="text-green-400 text-lg">Scan Successful!</p>
-                    <p class="text-sm break-all font-mono">Decoded Text: ${decodedText}</p>
+                    <p class="text-xl break-all font-mono">${decodedText}</p>
                 `;
             };
-
             const onScanFailure = (error) => {
-                // handle scan failure, usually better to ignore and keep scanning.
-                // console.warn(`Code scan error = ${error}`);
+                 if(!scanResultDiv.innerHTML.includes("Scan Successful!")) {
+                    scanResultDiv.innerHTML = `<p class="text-red-400">Scanning... No QR code detected.</p>`;
+                 }
             };
-            
-            // Configuration for the scanner
-            const config = { fps: 10, qrbox: { width: 280, height: 280 } };
-            
-            // Start scanning
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
             html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
                 .catch(err => {
-                    statusDiv.textContent = "Could not start camera. Please grant permission.";
-                    console.error("Error starting QR scanner", err);
+                    scanResultDiv.innerHTML = `<p class="text-red-500">Error: Could not start camera.</p>`;
                 });
         };
 
+        qrImageFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().catch(err => console.error("Scanner failed to stop", err));
+            }
+            
+            document.getElementById('reader').style.display = 'none';
+            statusDiv.textContent = 'Scanning uploaded image...';
+
+            if (!html5QrCode) {
+                 html5QrCode = new Html5Qrcode("reader");
+            }
+
+            html5QrCode.scanFile(file, true)
+                .then(decodedText => {
+                    scanResultDiv.innerHTML = `
+                        <p class="text-green-400 text-lg">Scan Successful!</p>
+                        <p class="text-xl break-all font-mono">${decodedText}</p>
+                    `;
+                    statusDiv.textContent = 'Image scanned successfully!';
+                })
+                .catch(err => {
+                    scanResultDiv.innerHTML = `<p class="text-red-500">Error: Could not decode QR code from the image.</p>`;
+                    statusDiv.textContent = 'Failed to scan image.';
+                    console.error(`Error scanning file: ${err}`);
+                });
+        });
     </script>
 </body>
 </html>
-
-
