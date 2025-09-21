@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -71,8 +71,9 @@
             background-color: #8E8E8E;
         }
         
-        #qrcode-grid img {
-            image-rendering: pixelated;
+        #qrcode-grid img,
+        #qrcode-grid canvas {
+            image-rendering: pixelated; /* Ensures crisp images */
         }
         
         #reader {
@@ -138,7 +139,7 @@
         </main>
         
         <footer class="text-center text-xs text-gray-400 mt-8">
-            <p>Designed by the Goat himself</p>
+            <p>Made with 像素 and JavaScript</p>
         </footer>
     </div>
 
@@ -193,37 +194,46 @@
             statusDiv.textContent = 'Generating QR codes...';
             qrCodeGrid.innerHTML = '';
             downloadBtn.classList.add('hidden');
-            setTimeout(() => {
-                excelData.forEach(value => {
-                    const id = String(value);
-                    const cell = document.createElement('div');
-                    cell.className = 'flex flex-col items-center text-center p-2 panel-8bit';
-                    const qrContainer = document.createElement('div');
-                    qrContainer.className = 'p-4 bg-white rounded-md';
-                    cell.appendChild(qrContainer);
-                    const idText = document.createElement('p');
-                    idText.textContent = id;
-                    idText.className = 'text-xs mt-2 break-all';
-                    cell.appendChild(idText);
-                    qrCodeGrid.appendChild(cell);
-                    new QRCode(qrContainer, {
-                        text: id,
-                        width: 256,
-                        height: 256,
-                        correctLevel: QRCode.CorrectLevel.L
-                    });
+            
+            excelData.forEach(value => {
+                const id = String(value);
+                const cell = document.createElement('div');
+                cell.className = 'flex flex-col items-center text-center p-2 panel-8bit';
+                
+                const qrContainer = document.createElement('div');
+                qrContainer.className = 'p-4 bg-white rounded-md';
+                
+                const qr = new QRious({
+                    value: id,
+                    size: 256,
+                    level: 'L'
                 });
-                statusDiv.textContent = `${excelData.length} QR codes generated successfully!`;
-                downloadBtn.classList.remove('hidden');
-            }, 10);
+
+                const img = document.createElement('img');
+                img.src = qr.toDataURL();
+                img.className = "w-full h-auto";
+                qrContainer.appendChild(img);
+                
+                cell.appendChild(qrContainer);
+
+                const idText = document.createElement('p');
+                idText.textContent = id;
+                idText.className = 'text-xs mt-2 break-all';
+                cell.appendChild(idText);
+                
+                qrCodeGrid.appendChild(cell);
+            });
+            statusDiv.textContent = `${excelData.length} QR codes generated successfully!`;
+            downloadBtn.classList.remove('hidden');
         });
 
         downloadBtn.addEventListener('click', async () => {
             statusDiv.textContent = 'Compressing files...';
             const zip = new JSZip();
-            qrCodeGrid.querySelectorAll('canvas').forEach((canvas, index) => {
+            document.querySelectorAll('#qrcode-grid img').forEach((img, index) => {
                 const id = excelData[index];
-                zip.file(`${id}.png`, canvas.toDataURL('image/png').split(',')[1], { base64: true });
+                const base64Data = img.src.split(',')[1];
+                zip.file(`${id}.png`, base64Data, { base64: true });
             });
             const content = await zip.generateAsync({ type: 'blob' });
             saveAs(content, 'qr-codes.zip');
@@ -256,7 +266,7 @@
 
         const startScanner = () => {
             document.getElementById('reader').style.display = 'block';
-            scanResultDiv.innerHTML = `<p class="text-gray-400">Scan a QR code to see the result here.</p>`;
+            scanResultDiv.innerHTML = `<p class="text-yellow-400">Point your camera at a QR code...</p>`;
 
             if (!html5QrCode) {
                  html5QrCode = new Html5Qrcode("reader");
@@ -268,11 +278,11 @@
                     <p class="text-xl break-all font-mono">${decodedText}</p>
                 `;
             };
+            
             const onScanFailure = (error) => {
-                 if(!scanResultDiv.innerHTML.includes("Scan Successful!")) {
-                    scanResultDiv.innerHTML = `<p class="text-red-400">Scanning... No QR code detected.</p>`;
-                 }
+                 // Intentionally left blank to improve performance.
             };
+
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
             html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
                 .catch(err => {
