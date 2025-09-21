@@ -138,7 +138,7 @@
         </main>
         
         <footer class="text-center text-xs text-gray-400 mt-8">
-            <p>Made with 像素 and JavaScript</p>
+            <p>Designed by the Goat himself</p>
         </footer>
     </div>
 
@@ -230,9 +230,13 @@
             statusDiv.textContent = 'ZIP file ready!';
         });
         
-        const switchTab = (tab) => {
+        const switchTab = async (tab) => {
             if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().catch(err => console.error("Scanner failed to stop", err));
+                try {
+                    await html5QrCode.stop();
+                } catch (err) {
+                    console.error("Failed to stop scanner during tab switch:", err);
+                }
             }
             if (tab === 'generator') {
                 generatorSection.classList.remove('hidden');
@@ -276,12 +280,16 @@
                 });
         };
 
-        qrImageFile.addEventListener('change', (event) => {
+        qrImageFile.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
             if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().catch(err => console.error("Scanner failed to stop", err));
+                try {
+                    await html5QrCode.stop();
+                } catch (err) {
+                     console.error("Failed to stop camera before file scan:", err);
+                }
             }
             
             document.getElementById('reader').style.display = 'none';
@@ -308,3 +316,4 @@
     </script>
 </body>
 </html>
+
