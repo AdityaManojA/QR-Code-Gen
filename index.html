@@ -77,9 +77,13 @@
             image-rendering: crisp-edges;
         }
         
-        #camera-preview {
+        #camera-preview, #capture-preview-img {
             border: 4px solid #3E3E3E;
             box-shadow: 6px 6px 0px #222222;
+        }
+
+        #camera-preview {
+            transform: scaleX(-1);
         }
 
         #qr-modal {
@@ -154,6 +158,12 @@
                         <button id="cancel-scan-btn" class="btn-8bit py-2 px-4 w-full">Cancel</button>
                     </div>
 
+                    <div id="capture-preview-container" class="w-full max-w-sm text-center hidden">
+                        <img id="capture-preview-img" class="w-full h-auto mb-4">
+                        <button id="scan-captured-btn" class="btn-8bit py-3 px-6 w-full mb-2">Scan This Photo</button>
+                        <button id="retake-photo-btn" class="btn-8bit py-2 px-4 w-full">Retake Photo</button>
+                    </div>
+
                     <div id="reader" class="hidden"></div>
                     <canvas id="capture-canvas" class="hidden"></canvas>
                     
@@ -197,6 +207,11 @@
         const cameraPreview = document.getElementById('camera-preview');
         const capturePhotoBtn = document.getElementById('capture-photo-btn');
         const captureCanvas = document.getElementById('capture-canvas');
+        const capturePreviewContainer = document.getElementById('capture-preview-container');
+        const capturePreviewImg = document.getElementById('capture-preview-img');
+        const scanCapturedBtn = document.getElementById('scan-captured-btn');
+        const retakePhotoBtn = document.getElementById('retake-photo-btn');
+
         
         let excelData = [];
         let cameraStream;
@@ -322,12 +337,22 @@
                 showGeneratorBtn.classList.remove('active');
                 showScannerBtn.classList.add('active');
                 cameraContainer.classList.add('hidden');
+                capturePreviewContainer.classList.add('hidden');
                 scannerChoiceDiv.classList.remove('hidden');
                 scanResultDiv.innerHTML = `<p class="text-gray-400">Scan or upload an image to see the result.</p>`;
             }
         }
         showGeneratorBtn.addEventListener('click', () => switchTab('generator'));
         showScannerBtn.addEventListener('click', () => switchTab('scanner'));
+
+        const dataURLtoFile = (dataurl, filename) => {
+            let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new File([u8arr], filename, {type:mime});
+        }
 
         const scanImageFile = (file) => {
             if (!file) return;
@@ -350,10 +375,11 @@
                 });
         };
         
-        takePhotoBtn.addEventListener('click', async () => {
-            scannerChoiceDiv.classList.add('hidden');
-            cameraContainer.classList.remove('hidden');
-            scanResultDiv.innerHTML = `<p class="text-yellow-400">Ready to capture...</p>`;
+        const startCamera = async () => {
+             scannerChoiceDiv.classList.add('hidden');
+             capturePreviewContainer.classList.add('hidden');
+             cameraContainer.classList.remove('hidden');
+             scanResultDiv.innerHTML = `<p class="text-yellow-400">Ready to capture...</p>`;
 
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -365,7 +391,9 @@
                 cameraContainer.classList.add('hidden');
                 scannerChoiceDiv.classList.remove('hidden');
             }
-        });
+        }
+
+        takePhotoBtn.addEventListener('click', startCamera);
 
         cancelScanBtn.addEventListener('click', () => {
             stopCamera();
@@ -382,20 +410,27 @@
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             
             stopCamera();
-            
-            canvas.toBlob((blob) => {
-                const file = new File([blob], "capture.png", { type: "image/png" });
-                scanImageFile(file);
-            }, 'image/png');
+
+            const dataURL = canvas.toDataURL('image/png');
+            capturePreviewImg.src = dataURL;
 
             cameraContainer.classList.add('hidden');
+            capturePreviewContainer.classList.remove('hidden');
+        });
+
+        scanCapturedBtn.addEventListener('click', () => {
+            const dataURL = capturePreviewImg.src;
+            const file = dataURLtoFile(dataURL, 'capture.png');
+            scanImageFile(file);
+            capturePreviewContainer.classList.add('hidden');
             scannerChoiceDiv.classList.remove('hidden');
         });
+
+        retakePhotoBtn.addEventListener('click', startCamera);
 
         qrImageFile.addEventListener('change', (event) => {
             const file = event.target.files[0];
             scanImageFile(file);
-            // Reset the file input so the same file can be chosen again
             event.target.value = '';
         });
     </script>
